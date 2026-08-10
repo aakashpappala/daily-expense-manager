@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Expense Manager</title>
+
+    <!-- Google Fonts & Chart.js -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Application CSS -->
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+
+    <!-- Header Navigation Bar -->
+    <nav class="navbar" id="navbar" style="display: none;">
+        <div class="brand">
+            <div class="brand-icon">₹</div>
+            <span>DAILY EXPENSE MANAGER</span>
+        </div>
+        <ul class="nav-links">
+            <li class="nav-item active" onclick="switchView('dashboard')">📊 Dashboard</li>
+            <li class="nav-item" onclick="switchView('expenses')">💸 Expenses</li>
+            <li class="nav-item" onclick="switchView('categories')">🏷️ Categories</li>
+            <li class="nav-item" onclick="switchView('budgets')">🎯 Budgets</li>
+            <li class="nav-item" onclick="switchView('reports')">📈 Analytics</li>
+            <li class="nav-item" onclick="switchView('notifications')">🔔 Alerts <span id="nav-unread-badge" class="badge-count" style="display:none;">0</span></li>
+        </ul>
+        <div class="user-profile">
+            <span class="user-badge" id="user-display-name">User</span>
+            <button class="btn btn-secondary" onclick="logout()">Logout</button>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container">
+
+        <!-- AUTHENTICATION VIEW -->
+        <div id="auth-view" class="auth-wrapper">
+            <div class="auth-card">
+                <div class="brand" style="justify-content: center; margin-bottom: 1.5rem;">
+                    <div class="brand-icon">₹</div>
+                    <span>EXPENSE MANAGER</span>
+                </div>
+                <div class="auth-tabs">
+                    <div class="auth-tab active" id="tab-login" onclick="toggleAuthTab('login')">Login</div>
+                    <div class="auth-tab" id="tab-register" onclick="toggleAuthTab('register')">Register</div>
+                </div>
+
+                <!-- Login Form -->
+                <form id="login-form" onsubmit="handleLogin(event)">
+                    <div class="form-group">
+                        <label>Email Address</label>
+                        <input type="email" id="login-email" class="form-control" required placeholder="user@example.com">
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="login-password" class="form-control" required placeholder="••••••••">
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Sign In</button>
+                </form>
+
+                <!-- Register Form -->
+                <form id="register-form" style="display: none;" onsubmit="handleRegister(event)">
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input type="text" id="reg-name" class="form-control" required placeholder="John Doe">
+                    </div>
+                    <div class="form-group">
+                        <label>Email Address</label>
+                        <input type="email" id="reg-email" class="form-control" required placeholder="user@example.com">
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="reg-password" class="form-control" required placeholder="••••••••">
+                    </div>
+                    <div class="form-group">
+                        <label>Confirm Password</label>
+                        <input type="password" id="reg-confirm-password" class="form-control" required placeholder="••••••••">
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Create Account</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- DASHBOARD VIEW -->
+        <div id="dashboard-view" class="view-content" style="display: none;">
+            
+            <!-- Alert Banners -->
+            <div id="dashboard-alerts-container"></div>
+
+            <!-- Metrics Grid -->
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-title">Today's Expenses</div>
+                    <div class="metric-value" id="metric-today-total">₹0.00</div>
+                    <div class="metric-sub" id="metric-daily-budget-sub">Limit: ₹500.00</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">This Month's Expenses</div>
+                    <div class="metric-value" id="metric-month-total">₹0.00</div>
+                    <div class="metric-sub" id="metric-monthly-budget-sub">Limit: ₹15,000.00</div>
+                </div>
+                <div class="metric-card success" id="card-daily-rem">
+                    <div class="metric-title">Remaining Daily Budget</div>
+                    <div class="metric-value" id="metric-remaining-daily">₹500.00</div>
+                    <div class="metric-sub" id="metric-daily-status">Status: Normal</div>
+                </div>
+                <div class="metric-card success" id="card-monthly-rem">
+                    <div class="metric-title">Remaining Monthly Budget</div>
+                    <div class="metric-value" id="metric-remaining-monthly">₹15,000.00</div>
+                    <div class="metric-sub" id="metric-monthly-status">Status: Normal</div>
+                </div>
+            </div>
+
+            <!-- Action Bar -->
+            <div class="section-title">
+                <span>Category Breakdown (This Month)</span>
+                <div style="display: flex; gap: 0.75rem;">
+                    <button class="btn btn-rapido" onclick="openRapidoModal()">🚕 Rapido Ride</button>
+                    <button class="btn btn-primary" onclick="openExpenseModal()">+ Add Expense</button>
+                </div>
+            </div>
+
+            <!-- Category Spendings Grid -->
+            <div class="category-grid" id="dashboard-category-grid">
+                <!-- Dynamically Populated -->
+            </div>
+
+            <!-- Recent Expenses Section -->
+            <div class="section-title">
+                <span>Recent Expenses</span>
+                <button class="btn btn-secondary" onclick="switchView('expenses')">View All</button>
+            </div>
+            <div class="table-card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Category</th>
+                            <th>Description / Note</th>
+                            <th>Payment Method</th>
+                            <th>Amount</th>
+                            <th>Bill Attachment</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recent-expenses-tbody">
+                        <!-- Dynamically Populated -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- CATEGORIES VIEW -->
+        <div id="categories-view" class="view-content" style="display: none;">
+            <div class="section-title">
+                <span>My Categories</span>
+                <button class="btn btn-primary" onclick="openCategoryModal()">+ Add Custom Category</button>
+            </div>
+            <div class="category-grid" id="all-categories-grid"></div>
+        </div>
+
+        <!-- CATEGORY DETAIL VIEW -->
+        <div id="category-detail-view" class="view-content" style="display: none;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
+                <button class="btn btn-secondary" onclick="switchView('dashboard')">← Back to Dashboard</button>
+                <h2 id="cat-detail-title" style="color: var(--secondary);">Category Detail</h2>
+            </div>
+
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-title">Monthly Total</div>
+                    <div class="metric-value" id="cat-detail-monthly-total">₹0.00</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">Daily Average</div>
+                    <div class="metric-value" id="cat-detail-daily-avg">₹0.00</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">Highest Spending Day</div>
+                    <div class="metric-value" id="cat-detail-highest-day" style="font-size: 1.2rem; color: #f87171;">N/A</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">Lowest Spending Day</div>
+                    <div class="metric-value" id="cat-detail-lowest-day" style="font-size: 1.2rem; color: #4ade80;">N/A</div>
+                </div>
+            </div>
+
+            <div class="section-title">Daily Spending Breakdown (Click any date for details)</div>
+            <div class="table-card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Transactions</th>
+                            <th>Total Amount</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cat-detail-daily-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- EXPENSES LIST & SEARCH VIEW -->
+        <div id="expenses-view" class="view-content" style="display: none;">
+            <div class="section-title">
+                <span>Expenses Explorer</span>
+                <button class="btn btn-primary" onclick="openExpenseModal()">+ Add Expense</button>
+            </div>
+
+            <!-- Filter Controls -->
+            <div style="background: var(--card-bg); border: 1px solid var(--card-border); padding: 1.25rem; border-radius: var(--radius); margin-bottom: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap;">
+                <input type="text" id="filter-query" class="form-control" placeholder="Search message/location..." style="flex: 1; min-width: 200px;">
+                <select id="filter-category" class="form-control" style="width: 180px;">
+                    <option value="">All Categories</option>
+                </select>
+                <select id="filter-pm" class="form-control" style="width: 160px;">
+                    <option value="">All Payment Methods</option>
+                    <option value="Cash">Cash</option>
+                    <option value="UPI">UPI</option>
+                    <option value="Card">Card</option>
+                    <option value="Bank Transfer">Bank Transfer</option>
+                    <option value="Other">Other</option>
+                </select>
+                <input type="date" id="filter-start-date" class="form-control" style="width: 160px;">
+                <input type="date" id="filter-end-date" class="form-control" style="width: 160px;">
+                <button class="btn btn-secondary" onclick="applyExpenseFilters()">Filter</button>
+            </div>
+
+            <div class="table-card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Category</th>
+                            <th>Description / Note</th>
+                            <th>Payment Method</th>
+                            <th>Amount</th>
+                            <th>Bill</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="expenses-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- BUDGETS VIEW -->
+        <div id="budgets-view" class="view-content" style="display: none;">
+            <div class="section-title">Manage Expense Limits</div>
+            <div class="auth-card" style="max-width: 600px; margin: 0 auto;">
+                <form onsubmit="saveBudgets(event)">
+                    <div class="form-group">
+                        <label>Daily Budget Limit (₹)</label>
+                        <input type="number" step="0.01" id="input-daily-budget" class="form-control" required placeholder="500.00">
+                    </div>
+                    <div class="form-group">
+                        <label>Monthly Budget Limit (₹)</label>
+                        <input type="number" step="0.01" id="input-monthly-budget" class="form-control" required placeholder="15000.00">
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">Save Budget Limits</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- REPORTS & ANALYTICS VIEW -->
+        <div id="reports-view" class="view-content" style="display: none;">
+            <div class="section-title">Spending Analytics & Insights</div>
+
+            <!-- Spending Analysis Table -->
+            <div class="table-card" style="margin-bottom: 2rem;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>This Month</th>
+                            <th>Last Month</th>
+                            <th>Difference</th>
+                            <th>% Change</th>
+                            <th>Status & Alerts</th>
+                        </tr>
+                    </thead>
+                    <tbody id="analytics-spending-tbody"></tbody>
+                </table>
+            </div>
+
+            <!-- Charts Grid -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 1.5rem;">
+                <div class="metric-card">
+                    <div class="metric-title">Category Spending Comparison</div>
+                    <canvas id="chart-category-comparison" style="max-height: 300px;"></canvas>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">Daily Spending Trend (Last 14 Days)</div>
+                    <canvas id="chart-daily-trend" style="max-height: 300px;"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- NOTIFICATIONS VIEW -->
+        <div id="notifications-view" class="view-content" style="display: none;">
+            <div class="section-title">
+                <span>Notifications & System Alerts</span>
+                <button class="btn btn-secondary" onclick="markAllNotificationsAsRead()">Mark All as Read</button>
+            </div>
+            <div id="notifications-list-container"></div>
+        </div>
+
+    </div>
+
+    <!-- MODALS -->
+
+    <!-- Add/Edit Expense Modal -->
+    <div class="modal-overlay" id="expense-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="expense-modal-title">Add New Expense</h3>
+                <button class="close-btn" onclick="closeExpenseModal()">&times;</button>
+            </div>
+            <form id="expense-form" onsubmit="saveExpense(event)">
+                <input type="hidden" id="expense-id">
+                <div class="form-group">
+                    <label>Category *</label>
+                    <select id="expense-category" class="form-control" required></select>
+                </div>
+                <div class="form-group">
+                    <label>Amount (₹) *</label>
+                    <input type="number" step="0.01" min="0.01" id="expense-amount" class="form-control" required placeholder="e.g. 250.00">
+                </div>
+                <div class="form-group">
+                    <label>Date *</label>
+                    <input type="date" id="expense-date" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Payment Method *</label>
+                    <select id="expense-payment-method" class="form-control" required>
+                        <option value="UPI">UPI</option>
+                        <option value="Cash">Cash</option>
+                        <option value="Card">Card</option>
+                        <option value="Bank Transfer">Bank Transfer</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Description / Note</label>
+                    <input type="text" id="expense-description" class="form-control" placeholder="e.g. D-Mart Groceries">
+                </div>
+                <div class="form-group">
+                    <label>Location (Optional)</label>
+                    <input type="text" id="expense-location" class="form-control" placeholder="e.g. D-Mart Store / Bhimavaram">
+                </div>
+                <div class="form-group">
+                    <label>Bill Attachment (JPG, PNG, PDF - Max 10MB)</label>
+                    <input type="file" id="expense-file" class="form-control" accept=".jpg,.jpeg,.png,.pdf">
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Save Expense</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Rapido Ride Modal (Demonstrating Overloaded Java Methods) -->
+    <div class="modal-overlay" id="rapido-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>🚕 Rapido Quick Ride Expense</h3>
+                <button class="close-btn" onclick="closeRapidoModal()">&times;</button>
+            </div>
+            <form onsubmit="saveRapidoRide(event)">
+                <div class="form-group">
+                    <label>Ride Amount (₹) *</label>
+                    <input type="number" step="0.01" min="0.01" id="rapido-amount" class="form-control" required placeholder="e.g. 180.00">
+                </div>
+                <div class="form-group">
+                    <label>Message / Reason (Optional)</label>
+                    <input type="text" id="rapido-message" class="form-control" placeholder="e.g. College ki vellanu">
+                </div>
+                <div class="form-group">
+                    <label>Location (Optional)</label>
+                    <input type="text" id="rapido-location" class="form-control" placeholder="e.g. Bhimavaram">
+                </div>
+                <button type="submit" class="btn btn-rapido" style="width: 100%; margin-top: 1rem; font-weight: 700;">Add Rapido Ride</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Category Create Modal -->
+    <div class="modal-overlay" id="category-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Create Custom Category</h3>
+                <button class="close-btn" onclick="closeCategoryModal()">&times;</button>
+            </div>
+            <form onsubmit="saveCategory(event)">
+                <div class="form-group">
+                    <label>Category Name *</label>
+                    <input type="text" id="category-name-input" class="form-control" required placeholder="e.g. Bus, Medical, Mobile Recharge">
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Create Category</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Daily Details Modal -->
+    <div class="modal-overlay" id="daily-detail-modal">
+        <div class="modal" style="max-width: 700px;">
+            <div class="modal-header">
+                <h3 id="daily-modal-title">Daily Category Expenses</h3>
+                <button class="close-btn" onclick="closeDailyDetailModal()">&times;</button>
+            </div>
+            <div id="daily-modal-body"></div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- Application JavaScript logic -->
+    <script src="/js/app.js"></script>
+</body>
+</html>
