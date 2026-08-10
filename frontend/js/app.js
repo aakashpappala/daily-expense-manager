@@ -1,5 +1,6 @@
 // DAILY EXPENSE MANAGER - Frontend JavaScript Client
-const API_BASE = window.location.origin.includes('8082') ? '/api' : 'http://localhost:8082/api';
+const API_BASE = 'https://daily-expense-manager-csk8.onrender.com/api';
+
 let jwtToken = localStorage.getItem('jwtToken');
 let currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
 let categoriesCache = [];
