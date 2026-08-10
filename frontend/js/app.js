@@ -477,15 +477,56 @@ async function loadCategoriesView() {
     try {
         const categories = await apiRequest('/categories');
         const grid = document.getElementById('all-categories-grid');
+
         grid.innerHTML = categories.map(c => `
-            <div class="category-card" onclick="viewCategoryDetail(${c.id})">
+            <div class="category-card">
+
                 <div class="category-header">
                     <span class="category-name">${c.name}</span>
-                    ${c.isDefault ? '<span class="user-badge">Default</span>' : '<span class="user-badge" style="background:#0284c7;">Custom</span>'}
+
+                    ${c.isDefault
+                        ? '<span class="user-badge">Default</span>'
+                        : `
+                            <div style="display:flex; gap:0.5rem;">
+                                <span class="user-badge" style="background:#0284c7;">Custom</span>
+
+                                <button
+                                    class="btn btn-danger"
+                                    style="padding:0.3rem 0.6rem;"
+                                    onclick="deleteCategory(${c.id}, event)">
+                                    Delete
+                                </button>
+                            </div>
+                        `
+                    }
                 </div>
-                <div style="font-size:0.85rem; color:var(--text-muted); margin-top:0.5rem;">Click to view detailed breakdown</div>
+
+                <div
+                    style="font-size:0.85rem; color:var(--text-muted); margin-top:0.5rem; cursor:pointer;"
+                    onclick="viewCategoryDetail(${c.id})">
+                    Click to view detailed breakdown
+                </div>
+
             </div>
         `).join('');
+
+    } catch (err) {}
+}
+async function deleteCategory(id, event) {
+    event.stopPropagation();
+
+    if (!confirm('Are you sure you want to delete this category?')) {
+        return;
+    }
+
+    try {
+        await apiRequest(`/categories/${id}`, 'DELETE');
+
+        showToast('Category deleted successfully', 'success');
+
+        await loadUserCategories();
+        await loadCategoriesView();
+
     } catch (err) {}
 }
 
