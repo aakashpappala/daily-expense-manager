@@ -631,10 +631,11 @@ async function saveBudgets(e) {
 
         showToast('Budget limits updated successfully!', 'success');
 
-        // Automatically go to Dashboard
         switchView('dashboard');
 
-    } catch (err) {}
+    } catch (err) {
+        // Error handled by apiRequest
+    }
 }
 // Reports & Charts View
 async function loadReportsView() {
