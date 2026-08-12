@@ -357,7 +357,19 @@ function renderExpensesTable(expenses, tbodyId) {
                 ` : '<span style="color:var(--text-muted);">No Bill</span>'}
             </td>
             <td>
-                <button class="btn btn-danger" style="padding:0.4rem 0.8rem;" onclick="deleteExpense(${e.id})">Delete</button>
+                <div style="display:flex; gap:0.4rem;">
+                    <button class="btn btn-secondary"
+                            style="padding:0.4rem 0.8rem;"
+                            onclick="editExpense(${e.id})">
+                        Edit
+                    </button>
+
+                    <button class="btn btn-danger"
+                            style="padding:0.4rem 0.8rem;"
+                            onclick="deleteExpense(${e.id})">
+                        Delete
+                    </button>
+                </div>
             </td>
         </tr>
     `).join('');
@@ -372,12 +384,35 @@ function openExpenseModal() {
     document.getElementById('expense-modal').classList.add('active');
 }
 
+async function editExpense(id) {
+    try {
+        const expense = await apiRequest(`/expenses/${id}`);
+
+        document.getElementById('expense-id').value = expense.id;
+        document.getElementById('expense-category').value = expense.category.id;
+        document.getElementById('expense-amount').value = expense.amount;
+        document.getElementById('expense-date').value = expense.expenseDate;
+        document.getElementById('expense-payment-method').value = expense.paymentMethod;
+        document.getElementById('expense-description').value = expense.description || '';
+        document.getElementById('expense-location').value = expense.location || '';
+
+        document.getElementById('expense-modal-title').innerText = 'Edit Expense';
+
+        document.getElementById('expense-modal').classList.add('active');
+
+    } catch (err) {
+        // Error handled by apiRequest
+    }
+}
+
 function closeExpenseModal() {
     document.getElementById('expense-modal').classList.remove('active');
 }
 
 async function saveExpense(e) {
     e.preventDefault();
+
+    const expenseId = document.getElementById('expense-id').value;
     const categoryId = document.getElementById('expense-category').value;
     const amount = document.getElementById('expense-amount').value;
     const expenseDate = document.getElementById('expense-date').value;
@@ -386,22 +421,65 @@ async function saveExpense(e) {
     const location = document.getElementById('expense-location').value;
     const fileInput = document.getElementById('expense-file');
 
-    const expensePayload = { categoryId, amount, expenseDate, paymentMethod, description, location };
+    const expensePayload = {
+        categoryId,
+        amount,
+        expenseDate,
+        paymentMethod,
+        description,
+        location
+    };
 
     const formData = new FormData();
-    formData.append('expense', new Blob([JSON.stringify(expensePayload)], { type: 'application/json' }));
+
+    formData.append(
+        'expense',
+        new Blob(
+            [JSON.stringify(expensePayload)],
+            { type: 'application/json' }
+        )
+    );
+
     if (fileInput.files.length > 0) {
         formData.append('bill', fileInput.files[0]);
     }
 
     try {
-        await apiRequest('/expenses', 'POST', formData, true);
-        showToast('Expense saved successfully!', 'success');
-        closeExpenseModal();
-        loadDashboard();
-    } catch (err) {}
-}
 
+        if (expenseId) {
+
+            // EDIT EXISTING EXPENSE
+            await apiRequest(
+                `/expenses/${expenseId}`,
+                'PUT',
+                formData,
+                true
+            );
+
+            showToast('Expense updated successfully!', 'success');
+
+        } else {
+
+            // ADD NEW EXPENSE
+            await apiRequest(
+                '/expenses',
+                'POST',
+                formData,
+                true
+            );
+
+            showToast('Expense saved successfully!', 'success');
+        }
+
+        closeExpenseModal();
+
+        await loadDashboard();
+        await loadExpenses();
+
+    } catch (err) {
+        // Error handled by apiRequest
+    }
+}
 // Rapido Quick Ride Modal (Java Method Overloading Integration)
 function openRapidoModal() {
     document.getElementById('rapido-modal').classList.add('active');
