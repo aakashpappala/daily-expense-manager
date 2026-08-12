@@ -630,7 +630,7 @@ async function saveBudgets(e) {
         });
 
         showToast('Budget limits updated successfully!', 'success');
-
+        alert('Switching to Dashboard...');
         switchView('dashboard');
 
     } catch (err) {
