@@ -1,5 +1,8 @@
 package com.expensetrack.service;
 
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
+
 import com.expensetrack.dto.NotificationDto;
 import com.expensetrack.entity.Notification;
 import com.expensetrack.entity.User;
@@ -18,6 +21,7 @@ public class NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final UserService userService;
+    private final JavaMailSender mailSender;
 
     public List<NotificationDto> getUserNotifications() {
         User user = userService.getAuthenticatedUser();
@@ -34,13 +38,37 @@ public class NotificationService {
 
     @Transactional
     public void createNotification(User user, String message, String type) {
+
+        // 1. Save notification inside the application
         Notification notification = Notification.builder()
                 .message(message)
                 .type(type)
                 .isRead(false)
                 .user(user)
                 .build();
+
         notificationRepository.save(notification);
+
+        // 2. Send email alert
+        try {
+            SimpleMailMessage email = new SimpleMailMessage();
+
+            email.setTo(user.getEmail());
+            email.setSubject("⚠️ Daily Expense Manager Alert");
+
+            email.setText(
+                    "Hello " + user.getFullName() + ",\n\n" +
+                            message + "\n\n" +
+                            "Please check your Daily Expense Manager dashboard " +
+                            "to review your spending.\n\n" +
+                            "Daily Expense Manager"
+            );
+
+            mailSender.send(email);
+
+        } catch (Exception e) {
+            System.err.println("Failed to send email alert: " + e.getMessage());
+        }
     }
 
     @Transactional
