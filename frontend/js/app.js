@@ -619,16 +619,23 @@ async function loadBudgetsView() {
 
 async function saveBudgets(e) {
     e.preventDefault();
+
     const dailyBudget = document.getElementById('input-daily-budget').value;
     const monthlyBudget = document.getElementById('input-monthly-budget').value;
 
     try {
-        await apiRequest('/budgets', 'PUT', { dailyBudget, monthlyBudget });
-        showToast('Budget limits updated!', 'success');
-        loadDashboard();
+        await apiRequest('/budgets', 'PUT', {
+            dailyBudget,
+            monthlyBudget
+        });
+
+        showToast('Budget limits updated successfully!', 'success');
+
+        // Automatically go to Dashboard
+        switchView('dashboard');
+
     } catch (err) {}
 }
-
 // Reports & Charts View
 async function loadReportsView() {
     try {

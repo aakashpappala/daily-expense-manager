@@ -28,5 +28,6 @@ public class BudgetController {
     @PutMapping
     public ResponseEntity<BudgetDto> updateBudget(@Valid @RequestBody BudgetRequest request) {
         return ResponseEntity.ok(budgetService.updateBudget(request));
+
     }
 }
