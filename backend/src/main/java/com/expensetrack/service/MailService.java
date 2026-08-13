@@ -41,7 +41,7 @@ public class MailService {
             System.err.println(
                     "Failed to send notification email to " + to
             );
-            System.err.println("Reason: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }
