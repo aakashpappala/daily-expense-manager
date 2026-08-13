@@ -505,7 +505,7 @@ async function saveBudgets(e) {
     try {
         await apiRequest('/budgets', 'PUT', { dailyBudget, monthlyBudget });
         showToast('Budget limits updated!', 'success');
-        loadDashboard();
+        switchView('dashboard');
     } catch (err) {}
 }
 
