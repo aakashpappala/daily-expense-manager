@@ -1,29 +1,36 @@
 package com.expensetrack.service;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.scheduling.annotation.Async;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
+
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
 public class MailService {
 
-    private final JavaMailSender mailSender;
+    @Value("${resend.api.key}")
+    private String resendApiKey;
 
-    @Async
+    private final RestClient restClient = RestClient.builder()
+            .baseUrl("https://api.resend.com")
+            .build();
+
     public void sendNotificationEmail(String to, String message) {
 
-        System.out.println("EMAIL DEBUG - MailService called for: " + to);
+        System.out.println("EMAIL DEBUG - Resend called for: " + to);
 
         try {
-            SimpleMailMessage mail = new SimpleMailMessage();
 
-            mail.setTo(to);
-            mail.setSubject("Daily Expense Manager - Alert");
-
-            mail.setText(
+            Map<String, Object> requestBody = Map.of(
+                    "from", "Daily Expense Manager <onboarding@resend.dev>",
+                    "to", new String[]{to},
+                    "subject", "Daily Expense Manager - Alert",
+                    "text",
                     "Hello,\n\n" +
                             "You have a new expense alert:\n\n" +
                             message +
@@ -33,11 +40,18 @@ public class MailService {
                             "Daily Expense Manager"
             );
 
-            mailSender.send(mail);
+            String response = restClient.post()
+                    .uri("/emails")
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + resendApiKey)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(requestBody)
+                    .retrieve()
+                    .body(String.class);
 
-            System.out.println("EMAIL DEBUG - mailSender.send() completed");
+            System.out.println("EMAIL DEBUG - Resend response: " + response);
 
         } catch (Exception e) {
+
             System.err.println("Failed to send notification email to " + to);
             e.printStackTrace();
         }
