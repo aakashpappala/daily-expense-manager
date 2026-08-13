@@ -15,6 +15,8 @@ public class MailService {
     @Async
     public void sendNotificationEmail(String to, String message) {
 
+        System.out.println("EMAIL DEBUG - MailService called for: " + to);
+
         try {
             SimpleMailMessage mail = new SimpleMailMessage();
 
@@ -33,14 +35,10 @@ public class MailService {
 
             mailSender.send(mail);
 
-            System.out.println(
-                    "Notification email sent successfully to: " + to
-            );
+            System.out.println("EMAIL DEBUG - mailSender.send() completed");
 
         } catch (Exception e) {
-            System.err.println(
-                    "Failed to send notification email to " + to
-            );
+            System.err.println("Failed to send notification email to " + to);
             e.printStackTrace();
         }
     }
