@@ -1,36 +1,29 @@
 package com.expensetrack.service;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClient;
-
-import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
 public class MailService {
 
-    @Value("${resend.api.key}")
-    private String resendApiKey;
-
-    private final RestClient restClient = RestClient.builder()
-            .baseUrl("https://api.resend.com")
-            .build();
+    private final JavaMailSender mailSender;
 
     public void sendNotificationEmail(String to, String message) {
 
-        System.out.println("EMAIL DEBUG - Resend called for: " + to);
+        System.out.println("EMAIL DEBUG - Brevo SMTP called for: " + to);
 
         try {
 
-            Map<String, Object> requestBody = Map.of(
-                    "from", "Daily Expense Manager <onboarding@resend.dev>",
-                    "to", new String[]{to},
-                    "subject", "Daily Expense Manager - Alert",
-                    "text",
+            SimpleMailMessage mail = new SimpleMailMessage();
+
+            mail.setFrom("dailyexpense.alerts@gmail.com");
+            mail.setTo(to);
+            mail.setSubject("Daily Expense Manager - Alert");
+
+            mail.setText(
                     "Hello,\n\n" +
                             "You have a new expense alert:\n\n" +
                             message +
@@ -40,15 +33,9 @@ public class MailService {
                             "Daily Expense Manager"
             );
 
-            String response = restClient.post()
-                    .uri("/emails")
-                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + resendApiKey)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(requestBody)
-                    .retrieve()
-                    .body(String.class);
+            mailSender.send(mail);
 
-            System.out.println("EMAIL DEBUG - Resend response: " + response);
+            System.out.println("EMAIL DEBUG - Brevo SMTP email sent successfully");
 
         } catch (Exception e) {
 
