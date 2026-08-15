@@ -39,7 +39,14 @@ public class MailService {
 
         } catch (Exception e) {
 
-            System.err.println("Failed to send notification email to " + to);
+            System.err.println("EMAIL ERROR TYPE: " + e.getClass().getName());
+            System.err.println("EMAIL ERROR MESSAGE: " + e.getMessage());
+
+            if (e.getCause() != null) {
+                System.err.println("EMAIL ROOT CAUSE: " + e.getCause().getClass().getName());
+                System.err.println("EMAIL ROOT MESSAGE: " + e.getCause().getMessage());
+            }
+
             e.printStackTrace();
         }
     }
